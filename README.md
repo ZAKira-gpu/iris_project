@@ -1,68 +1,94 @@
-# Iris-Recognition-CASIA-Iris-Thousand
+# Omar Medhat's Real-Time Iris Vector Extraction System
+
 ![](image.jpg)
 
-## Definition
+## 📌 Project Overview
 
-- This project represents a new iris recognition technique that detects and classify the iris images efficiently with high accuracy. The iris recognition model is beginning by eye detection process then the iris detection process takes place which detects the iris inside the eyes then iris segmentation process gets iris images that will be saved and used in the last process which is responsible for iris classification using convolutional neural network.<br/><br/>
-- The dataset used in this project is CASIA-Iris-Thousand version 4 which contains 20000 images from 1000  different persons. <br/> <br/>
-- The model uses a pre-trained convolutional neural network(CNN) model DenseNet-201 in the last process of iris classification.
+Welcome to my **Real-Time Iris Vector Extraction System**. This project is engineered to capture live video feeds from a webcam, dynamically detect the eye, perfectly segment the iris, and use a heavily modified Convolutional Neural Network (DenseNet-201) to output a 1920-dimensional feature vector in real-time. 
 
+This standalone system is completely optimized for live identity verification, embedding generation, and real-world deployment, shifting away from static dataset processing to dynamic, real-time AI processing.
 
+---
+
+## 🚀 Features
+
+1. **Real-Time Live Feed Integration**: Process live video from standard Webcams or Infrared (IR) cameras effortlessly.
+2. **Robust Eye & Iris Detection**: Uses Haar Cascades for initial eye region proposal and Hough Circle Transforms paired with mathematical morphology to accurately segment the iris.
+3. **Deep Learning Feature Extraction**: Utilizes a "beheaded" DenseNet-201 architecture (stopping at `GlobalAveragePooling2D`) to generate rich 1920-dimension embeddings representing unique iris features.
+4. **Self-Healing Pipeline**: Live feed execution is robust and skips frames without crashing if an eye or iris is momentarily undetectable.
+5. **Hardware Optimization**: Includes utility scripts to export the underlying Keras/TensorFlow models to **Intel OpenVINO** format for extreme performance on CPU environments.
 
 ![](image2.jpg)
-## Description
 
-- ##### eye_detection_2.py: this file represents the first process in this project where it's responsible for eye detection. This stage will ensure that the images contain eyes.
+---
 
-- ##### eyes_iris_detection_2.py: this file represents the second process where it's responsible for iris detection. The model takes the images detected in the last phase and it ensures that there is an iris inside the eyes the image will pass to the next step if it passed this step.
+## 🧠 How the System Works (The Full AI Pipeline)
 
-- ##### iris_segmentation_2.py: this file represents the third process where the iris features are extracted.
+This system relies on a multi-stage pipeline, blending classic computer vision (for fast localization) with modern deep learning (for highly accurate feature mapping).
 
-- ##### iris_extraction_2.py: this file combines all the above files in on file. it begins by eye detection then iris segmentation and saves the output that will be used in the iris classification process.
+### Stage 1: Eye Detection (`haarcascade_eye.xml`)
+Before we can analyze an iris, we must locate the eye. We use a **Haar Cascade Classifier** (`haarcascade_eye.xml`), which is a classic, ultra-fast Machine Learning object detection model.
+- **How it works**: It scans the image frame using a sliding window. At each step, it subtracts the sum of pixels under white rectangles from the sum of pixels under black rectangles (Haar-like features). It looks for specific contrast patterns—for example, the center of the eye (pupil/iris) is generally darker than the surrounding sclera (white part).
+- **Why we use it**: It is extremely fast and lightweight, allowing us to drop background pixels instantly and focus computational power only on the bounding box containing the eye.
 
-- ##### iris_classification_2. ipynb: this file represents the last process which is iris classification. this file uses pre-trained DenseNet-201 to classify between 1000 different classes in CASIA-Iris-Thousand version 4 dataset.
+### Stage 2: Iris Segmentation (Mathematical Morphology & Hough Circles)
+Once the eye is localized, the system must precisely isolate the iris (the colored ring) from the pupil (the dark center) and the sclera.
+- **Image Processing**: The system converts the eye region to grayscale and applies Binary Thresholding combined with Mathematical Morphology (opening and closing operations). This removes eyelashes, specular reflections (light bouncing off the cornea), and skin noise.
+- **Hough Circle Transform**: An algorithm that mathematically votes for the most likely circular shapes in the processed image. By setting specific radius constraints, it detects the exact center `(x, y)` and radius `(r)` of the iris, allowing the system to crop it perfectly.
 
--  ##### image_aug.py: this file used for image augmentation but it's not necessary to use it as you can run the project without using this file.
+### Stage 3: Deep Feature Extraction (DenseNet-201)
+The cropped, perfectly aligned iris is passed to our deep learning model. We use **DenseNet-201** (Densely Connected Convolutional Network).
+- **How DenseNet works**: Unlike traditional networks where a layer only connects to the next, DenseNet connects *every* layer to every subsequent layer. This allows it to learn incredibly complex, deep textures and micro-patterns inside the iris without losing information as the network gets deeper.
+- **The "Beheaded" Architecture**: Normally, DenseNet outputs a specific class label (e.g., "Person A" or "Person B"). For our Real-Time service, we "behead" the model by removing its final classification layer and stopping at the `GlobalAveragePooling2D` layer. 
+- **The Output Vector**: Instead of a name, the network outputs a raw array of **1920 numbers (a high-dimensional embedding vector)**. This vector is a mathematical summary of the unique textures in the person's iris. In a real-world application, this vector can be compared against a database using Cosine Similarity or Euclidean Distance to instantly verify identity.
 
-##  How to run this project ?
+---
 
-### Dependencies
+## 📂 File Directory & Architecture
 
-#### install this libraries:
-- numpy
-- keras
-- sklearn
-- opencv
-- glob
-- tensorflow
+Here is a detailed breakdown of the core files inside the repository and their roles:
 
-### To run this project you will need to:
-1. Download the CASIA-Iris-Thousand dataset from this link [CASIA-Iris-Thousand]( http://www.cbsr.ia.ac.cn/china/Iris%20Databases%20CH.asp)
+- **`real_time_iris.py`**: The core script for the live service. It opens your webcam (`cv2.VideoCapture`), detects the eye, extracts the iris ROI, and feeds it into the local AI model to print real-time embedding vectors to the console.
+- **`iris_feature_extractor.h5`**: The pre-compiled, "beheaded" DenseNet-201 deep learning model. It is included locally in the directory so that no internet connection is required to download weights when delivering to the client.
+- **`export_openvino.py`**: A utility script used to export the deep learning model. It saves the DenseNet-201 architecture as a TensorFlow SavedModel and provides the terminal commands required to convert it into OpenVINO IR format (`.xml` and `.bin`) for maximum Intel CPU efficiency.
+- **`haarcascade_eye.xml`**: The pre-trained XML Haar Cascade classifier used by OpenCV to find eye regions instantly.
 
-2. Change your directory names that contain the dataset to the name in the python and notebook files in these  lines:<br/>
-    - In iris_extreaction_2.py:
- 
-         ```html
-        #here create directory name that contain the dataset "CASIA-Iris-Thousand/"
-        
-        for filepath in glob.iglob('CASIA-Iris-Thousand/*'):
+---
 
-        #here create  directory name that contain the the extracted iris feautres "final_ casia/"
-        cv2.imwrite('final_ casia/'+str(L)+'.'+str(number)+".jpg",new_roi)
+## 🛠️ Installation & Dependencies
 
-        ```
-    - In iris_classification_2.ipynb:
+To run this project, ensure you have Python installed along with the following libraries:
 
-         ```html
-        # here directory name is "final_casia" which contain extracted iris features
+```bash
+pip install numpy opencv-python tensorflow keras scikit-learn
+```
 
-        
-        for filefilepath in glob.iglob('final_ casia/*'):
+If you plan to optimize the model for Intel hardware:
+```bash
+pip install openvino-dev
+```
 
-        ```
-3. Run iris_extraction_2.py.
+---
 
-4. Open iris_classification_2.ipynb and run it's cells.
+## 🏃‍♂️ How to Run the Project
 
+You can run this project as a **Live Service** or perform **Model Optimization**.
 
-##### I wrote a research paper in this project found [here](https://www.isroset.org/pdf_paper_view.php?paper_id=1775&4-IJSRMS-03115.pdf)
+### Method 1: Real-Time Iris Vector Extraction (Webcam)
+This mode does not require downloading any dataset. It uses your attached camera.
+1. Ensure your webcam is connected (An IR Camera is recommended for best results, but a standard RGB webcam works for testing).
+2. Run the main service script:
+   ```bash
+   python real_time_iris.py
+   ```
+3. A window will pop up showing the camera feed. A blue rectangle will track your eye, and a green circle will track your iris.
+4. The terminal will continuously output the 1920-dimension feature vector for your iris.
+5. Press the `q` key on your keyboard to exit the live feed.
+
+### Method 2: OpenVINO Model Optimization
+To prepare the feature extractor for high-performance inference on Intel CPUs:
+1. Run the export script:
+   ```bash
+   python export_openvino.py
+   ```
+2. The script will save the model to a `densenet201_beheaded` directory and print out the exact `mo` (Model Optimizer) command you need to run in your terminal to generate the `.xml` and `.bin` OpenVINO files.
