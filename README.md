@@ -1,4 +1,4 @@
-# Omar Medhat's Real-Time Iris Vector Extraction System
+# Iris Vector Extraction System
 
 ![](image.jpg)
 
